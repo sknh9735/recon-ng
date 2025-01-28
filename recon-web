@@ -1,14 +1,37 @@
-#!/usr/bin/env python3
+pip install requests
+import requests
 
-from recon.core.web import create_app
-import argparse
+# Replace with your access token and mobile number
+ACCESS_TOKEN = '006'
+MOBILE_NUMBER = '9002506437'
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--host', default='127.0.0.1', help="IP address to listen on")
-parser.add_argument('--port', default=5000, help="port to bind the web server to")
+# URL to get user ID using mobile number (this is just an example, actual implementation may vary)
+url = f'https://graph.facebook.com/v12.0/{MOBILE_NUMBER}?access_token={ACCESS_TOKEN}'
+response = requests.get(url)
 
-args = parser.parse_args()
-
-app = create_app()
-if __name__ == '__main__':
-    app.run(host=args.host, port=args.port)
+if response.status_code == 200:
+    user_id = response.json().get('id')
+    if user_id:
+        # URL to get profile picture
+        picture_url = f'https://graph.facebook.com/v12.0/{user_id}/picture?type=large&redirect=false&access_token={ACCESS_TOKEN}'
+        picture_response = requests.get(picture_url)
+        
+        if picture_response.status_code == 200:
+            picture_data = picture_response.json()
+            picture_url = picture_data['data']['url']
+            print(f"Profile Picture URL: {picture_url}")
+            
+            # Download the picture
+            image_response = requests.get(picture_url)
+            if image_response.status_code == 200:
+                with open('profile_picture.jpg', 'wb') as file:
+                    file.write(image_response.content)
+                print("Profile picture downloaded successfully.")
+            else:
+                print("Failed to download the profile picture.")
+        else:
+            print("Failed to retrieve profile picture URL.")
+    else:
+        print("User ID not found.")
+else:
+    print("Failed to retrieve user information.")
